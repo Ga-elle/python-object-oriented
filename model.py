@@ -55,6 +55,9 @@ class Zone:
     @classmethod
     def find_zone_that_contains(cls, position):
 
+        if not cls.ZONES:
+            cls._initialize_zones()
+
         longitude_index = int((position.longitude_degrees - cls.MIN_LONGITUDE_DEGREES) / cls.WIDTH_DEGREES)
         latitude_index = int((position.latitude_degrees - cls.MIN_LATITUDE_DEGREES) / cls.HEIGHT_DEGREES)
         longitude_bins = int((cls.MAX_LONGITUDE_DEGREES - cls.MIN_LONGITUDE_DEGREES) / cls.WIDTH_DEGREES)
@@ -82,8 +85,6 @@ class Zone:
         print("Length of ZONES is: " + str(len(cls.ZONES)))
 
 def main():
-
-    Zone._initialize_zones()
 
     for agent_attributes in json.load(open("agents-100k.json")):
         longitude = agent_attributes.pop("longitude")
