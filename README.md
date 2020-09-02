@@ -33,5 +33,5 @@ Si vous souhaitez en générer de nouveaux, entrez la commande suivante :
 
 Lancer le programme
 ```
-./model.py agents-100k.json
+python ./model.py
 ```

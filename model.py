@@ -1,5 +1,12 @@
+from collections import defaultdict # for income graph
 import json
 import math
+
+# If you are using Linux or Mac you can have bug when you launch the script
+# To avoid this issue, execute the two following lines before importing matplotlib
+import matplotlib as mil
+mil.use('TkAgg') # add it before launching matplotlib
+import matplotlib.pyplot as plt
 
 class Agent:
 
@@ -91,12 +98,9 @@ class Zone:
 
         zone = cls.ZONES[zone_index]
 
-        print(zone_index)
         assert zone.contains(position) # raise an exception when false
 
         return zone
-
-
 
     # Méthode globale à la classe (et non de l'instance)
     @classmethod
@@ -104,12 +108,78 @@ class Zone:
 
         cls.ZONES = []
 
-        for latitude in range(cls.MIN_LATITUDE_DEGREES, cls.MAX_LATITUDE_DEGREES, cls.WIDTH_DEGREES):
+        for latitude in range(cls.MIN_LATITUDE_DEGREES, cls.MAX_LATITUDE_DEGREES, cls.HEIGHT_DEGREES):
             for longitude in range(cls.MIN_LONGITUDE_DEGREES, cls.MAX_LONGITUDE_DEGREES, cls.WIDTH_DEGREES):
                 bottom_left_corner = Position(longitude, latitude)
                 top_right_corner = Position(longitude + cls.WIDTH_DEGREES, latitude + cls.HEIGHT_DEGREES)
                 zone = Zone(bottom_left_corner, top_right_corner)
                 cls.ZONES.append(zone)
+
+
+class BaseGraph:
+
+    def __init__(self):
+        self.title = "Your graph title"
+        self.x_label = "X-axis label"
+        self.y_label = "Y-axis label"
+        self.show_grid = True
+
+    def show(self, zones):
+        x_values, y_values = self.xy_values(zones)
+        self.plot(x_values, y_values)
+
+        plt.xlabel(self.x_label)
+        plt.ylabel(self.y_label)
+        plt.title(self.title)
+        plt.grid(self.show_grid)
+        plt.show()
+
+    def plot(self, x_values, y_values):
+        plt.plot(x_values, y_values, '.')
+
+    def xy_values(self, zones):
+        # You should implement this method in your children classes
+        raise NotImplementedError
+
+# Inheritance
+class AgreeablenessGraph(BaseGraph):
+
+    def __init__(self):
+        super().__init__() # executes the parent's __init__() method
+        # super(AgreeablenessGraph, self).__init__() # Call base constructor
+        self.title = "Nice people live in the countryside"
+        self.x_label = "population density"
+        self.y_label = "agreeableness"
+
+    def xy_values(self, zones):
+        x_values = [zone.population_density() for zone in zones]
+        y_values = [zone.average_agreeableness() for zone in zones]
+        return x_values, y_values
+
+
+class IncomeGraph(BaseGraph):
+    # Inheritance, yay!
+
+    def __init__(self):
+        # Call base constructor
+        super(IncomeGraph, self).__init__()
+
+        self.title = "Older people have more money"
+        self.x_label = "age"
+        self.y_label = "income"
+
+    def xy_values(self, zones):
+        income_by_age = defaultdict(float)
+        population_by_age = defaultdict(int)
+        for zone in zones:
+            for inhabitant in zone.inhabitants:
+                income_by_age[inhabitant.age] += inhabitant.income
+                population_by_age[inhabitant.age] += 1
+
+        x_values = range(0, 100)
+        # list comprehension (listcomps)
+        y_values = [income_by_age[age] / (population_by_age[age] or 1) for age in range(0, 100)]
+        return x_values, y_values
 
 
 def main():
@@ -124,7 +194,11 @@ def main():
         zone = Zone.find_zone_that_contains(position)
         zone.add_inhabitant(agent)
 
+    agreeableness_graph = AgreeablenessGraph()
+    agreeableness_graph.show(Zone.ZONES)
 
+    income_graph = IncomeGraph()
+    income_graph.show(Zone.ZONES)
 
 if __name__ == "__main__":
     main()
